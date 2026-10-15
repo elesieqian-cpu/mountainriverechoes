@@ -19,6 +19,11 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 
+# [拉祜族专属版 · 打包适配] PyInstaller 单文件模式下 __file__ 指向 _MEIPASS 根目录,
+# 会导致 BASE_DIR 漂移、找不到 webui/templates 与 webui/ethnos_cache。此处还原真实路径。
+if getattr(sys, 'frozen', False):
+    __file__ = os.path.join(sys._MEIPASS, 'webui', 'mountainriverechoes.py')
+
 import requests
 from flask import Flask, jsonify, request, render_template, send_from_directory, Response
 
@@ -509,6 +514,10 @@ def bilibili_build_all_worker():
 
 
 ETHNIC_CONFIRMED = {artist: ethnic for ethnic, lst in ETHNIC_ARTISTS.items() for artist in lst}
+# [拉祜族专属版] 打包版(MRE_LAHU_ONLY=1)仅保留拉祜族的权威归类: 其余歌手按「出现即归属」
+# 自然归入拉祜族曲库, 避免专属版界面冒出蒙古族/藏族等其他民族的卡片与计数。
+if os.environ.get('MRE_LAHU_ONLY') == '1':
+    ETHNIC_CONFIRMED = {k: v for k, v in ETHNIC_CONFIRMED.items() if v == '拉祜族'}
 ETHNIC_BY_KEY = {g['key']: g for g in ETHNIC_GROUPS}
 
 
